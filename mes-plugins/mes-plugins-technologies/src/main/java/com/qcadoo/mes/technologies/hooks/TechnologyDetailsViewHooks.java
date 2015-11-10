@@ -35,6 +35,8 @@ import com.qcadoo.mes.states.constants.StateChangeStatus;
 import com.qcadoo.mes.states.service.client.util.StateChangeHistoryService;
 import com.qcadoo.mes.technologies.constants.TechnologiesConstants;
 import com.qcadoo.mes.technologies.constants.TechnologyFields;
+import com.qcadoo.mes.technologies.export.TechnologyExporterService;
+import com.qcadoo.mes.technologies.export.TechnologyImporterService;
 import com.qcadoo.mes.technologies.states.constants.TechnologyState;
 import com.qcadoo.model.api.DataDefinitionService;
 import com.qcadoo.model.api.Entity;
@@ -68,7 +70,25 @@ public class TechnologyDetailsViewHooks {
     @Autowired
     private StateChangeHistoryService stateChangeHistoryService;
 
+    @Autowired
+    private TechnologyExporterService technologyExporterService;
+    
+    @Autowired
+    private TechnologyImporterService technologyImporterService;
+    
+    
+    public void test1(){
+       String json = technologyExporterService.exportTechnologies(327L);
+        
+        technologyImporterService.importTechnologies(json);
+
+    }
+    
     public void filterStateChangeHistory(final ViewDefinitionState view) {
+        
+        test1();
+        
+        
         final GridComponent historyGrid = (GridComponent) view.getComponentByReference("grid");
         final CustomRestriction onlySuccessfulRestriction = stateChangeHistoryService.buildStatusRestriction(STATUS,
                 Lists.newArrayList(StateChangeStatus.SUCCESSFUL.getStringValue()));
