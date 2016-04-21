@@ -1,4 +1,3 @@
-
 ALTER TABLE materialflowresources_resource ADD COLUMN quantityinadditionalunit numeric(14,5);
 
 ALTER TABLE materialflowresources_resource ADD COLUMN additionalcode_id bigint;
@@ -103,5 +102,12 @@ ALTER TABLE orders_order
 -- Table: productionpershift_dailyprogress
 
 ALTER TABLE productionpershift_dailyprogress ADD COLUMN efficiencytime integer;
+
+-- end
+
+-- Added new parameter
+-- last touched 21.04.2016 by pako
+
+ALTER TABLE basic_parameter ADD COLUMN autorecalculateorder boolean;
 
 -- end

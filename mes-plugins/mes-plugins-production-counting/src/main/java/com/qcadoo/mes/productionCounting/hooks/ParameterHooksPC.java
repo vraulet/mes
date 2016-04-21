@@ -63,6 +63,9 @@ public class ParameterHooksPC {
         if (parameter.getField(ParameterFieldsPC.AUTO_CLOSE_ORDER) == null) {
             parameter.setField(ParameterFieldsPC.AUTO_CLOSE_ORDER, false);
         }
+        if (parameter.getField(ParameterFieldsPC.AUTO_RECALCULATE_ORDER) == null) {
+            parameter.setField(ParameterFieldsPC.AUTO_RECALCULATE_ORDER, false);
+        }
     }
 
     public boolean validatesWith(final DataDefinition parameterDD, final Entity parameter) {
