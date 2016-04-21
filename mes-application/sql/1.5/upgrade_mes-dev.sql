@@ -78,3 +78,10 @@ SELECT add_group_role('ADMIN', 'ROLE_PRODUCTION_REGISTRATION_TERMINAL');
 SELECT add_group_role('USER', 'ROLE_PRODUCTION_REGISTRATION_TERMINAL');
 
 -- end
+
+-- Added new parameter
+-- last touched 21.04.2016 by pako
+
+ALTER TABLE basic_parameter ADD COLUMN autorecalculateorder boolean;
+
+-- end
