@@ -1,4 +1,3 @@
-
 ALTER TABLE materialflowresources_resource ADD COLUMN quantityinadditionalunit numeric(14,5);
 
 ALTER TABLE materialflowresources_resource ADD COLUMN additionalcode_id bigint;
@@ -113,6 +112,7 @@ ALTER TABLE orders_order
 
 ALTER TABLE productionpershift_dailyprogress ADD COLUMN efficiencytime integer;
 
+<<<<<<< 027ffcc823d75e2d00b943b5329a2cb1e301cf2d
 -- end
 
 
