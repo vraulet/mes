@@ -309,3 +309,10 @@ CREATE OR REPLACE VIEW materialflowresources_documentdto AS
 		ON suborder.id = document.suborder_id;
 
 -- end
+
+-- Added new parameter
+-- last touched 21.04.2016 by pako
+
+ALTER TABLE basic_parameter ADD COLUMN autorecalculateorder boolean;
+
+-- end
