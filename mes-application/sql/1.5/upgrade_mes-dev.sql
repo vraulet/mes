@@ -1,4 +1,4 @@
-﻿
+
 ALTER TABLE materialflowresources_resource ADD COLUMN quantityinadditionalunit numeric(14,5);
 
 ALTER TABLE materialflowresources_resource ADD COLUMN additionalcode_id bigint;
