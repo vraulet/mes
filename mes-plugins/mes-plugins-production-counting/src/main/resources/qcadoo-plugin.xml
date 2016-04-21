@@ -143,6 +143,9 @@
             <model:boolean name="autoCloseOrder"/>
         </model:model-field>
         <model:model-field model="parameter" plugin="basic">
+            <model:boolean name="autoRecalculateOrder"/>
+        </model:model-field>
+        <model:model-field model="parameter" plugin="basic">
             <model:boolean name="validateProductionRecordTimes"/>
         </model:model-field>
         <model:model-field model="parameter" plugin="basic">

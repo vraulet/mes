@@ -1,4 +1,4 @@
-﻿
+
 ALTER TABLE materialflowresources_resource ADD COLUMN quantityinadditionalunit numeric(14,5);
 
 ALTER TABLE materialflowresources_resource ADD COLUMN additionalcode_id bigint;
@@ -223,5 +223,12 @@ CREATE OR REPLACE VIEW productioncounting_trackingoperationproductincomponentdto
 		trackingoperationproductincomponent.usedquantity,
 		productiontracking.technologyoperationcomponent_id,
 		batch.number;
+
+-- end
+
+-- Added new parameter
+-- last touched 21.04.2016 by pako
+
+ALTER TABLE basic_parameter ADD COLUMN autorecalculateorder boolean;
 
 -- end
