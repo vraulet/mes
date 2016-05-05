@@ -55,7 +55,6 @@ import com.qcadoo.mes.states.StateChangeContext;
 import com.qcadoo.mes.states.constants.StateChangeStatus;
 import com.qcadoo.mes.states.messages.constants.StateMessageType;
 import com.qcadoo.mes.states.service.StateChangeContextBuilder;
-import com.qcadoo.model.api.DataDefinition;
 import com.qcadoo.model.api.Entity;
 import com.qcadoo.model.api.NumberService;
 import com.qcadoo.model.api.search.SearchCriteriaBuilder;
@@ -214,21 +213,8 @@ public final class ProductionTrackingListenerService {
     private void setOrderDoneQuantity(final Entity productionTracking) {
         Entity order = productionTracking.getBelongsToField(ProductionTrackingFields.ORDER);
 
-        BigDecimal doneQuantity = basicProductionCountingService.getProducedQuantityFromBasicProductionCountings(order);
-        order.setField(OrderFields.DONE_QUANTITY, doneQuantity);
-
-        BigDecimal plannedQuantiy = order.getDecimalField(OrderFields.PLANNED_QUANTITY);
-
-        BigDecimal quantityLeft = plannedQuantiy.subtract(doneQuantity);
-        Entity parameter = parameterService.getParameter();
-        if (parameter.getBooleanField(ParameterFieldsPC.AUTO_RECALCULATE_ORDER) && quantityLeft.signum() <= 0) {
-            DataDefinition productionTrackingDD = productionTracking.getDataDefinition();
-            String query = "SELECT MIN(timeRangeFrom) as start, MAX(timeRangeTo) as end FROM #productionCounting_productionTracking WHERE order.id = :orderId";
-            Entity datesEntity = productionTrackingDD.find(query).setLong("orderId", order.getId()).setMaxResults(1)
-                    .uniqueResult();
-            order.setField(OrderFields.EFFECTIVE_DATE_FROM, datesEntity.getDateField("start"));
-            order.setField(OrderFields.CORRECTED_DATE_TO, datesEntity.getDateField("end"));
-        }
+        order.setField(OrderFields.DONE_QUANTITY,
+                basicProductionCountingService.getProducedQuantityFromBasicProductionCountings(order));
         order.getDataDefinition().save(order);
     }
 
