@@ -112,7 +112,6 @@ ALTER TABLE orders_order
 
 ALTER TABLE productionpershift_dailyprogress ADD COLUMN efficiencytime integer;
 
-<<<<<<< 027ffcc823d75e2d00b943b5329a2cb1e301cf2d
 -- end
 
 
