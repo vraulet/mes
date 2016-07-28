@@ -29,6 +29,7 @@ import static com.qcadoo.mes.materialFlowResources.constants.ResourceFields.QUAN
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,7 @@ import com.qcadoo.mes.materialFlowResources.constants.LocationFieldsMFR;
 import com.qcadoo.mes.materialFlowResources.constants.MaterialFlowResourcesConstants;
 import com.qcadoo.mes.materialFlowResources.constants.PositionFields;
 import com.qcadoo.mes.materialFlowResources.constants.ResourceFields;
+import com.qcadoo.mes.materialFlowResources.constants.ResourceStockFields;
 import com.qcadoo.mes.materialFlowResources.constants.WarehouseAlgorithm;
 import com.qcadoo.model.api.DataDefinition;
 import com.qcadoo.model.api.DataDefinitionService;
@@ -366,12 +368,15 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         Entity warehouse = document.getBelongsToField(DocumentFields.LOCATION_FROM);
         WarehouseAlgorithm warehouseAlgorithm;
 
-        boolean enoughResources = true;
-
         StringBuilder errorMessage = new StringBuilder();
 
-        Multimap<Long, BigDecimal> quantitiesForWarehouse = getQuantitiesInWarehouse(warehouse,
-                getProductsAndPositionsFromDocument(document));
+        Multimap<Entity, Entity> productsAndPositions = getProductsAndPositionsFromDocument(document);
+        boolean enoughResources = validateResourceStock(document, productsAndPositions);
+        if (!enoughResources) {
+            addResourceStockError(document);
+            return;
+        }
+        Multimap<Long, BigDecimal> quantitiesForWarehouse = getQuantitiesInWarehouse(warehouse, productsAndPositions);
 
         List<Entity> generatedPositions = Lists.newArrayList();
 
@@ -549,12 +554,14 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         WarehouseAlgorithm warehouseAlgorithm = WarehouseAlgorithm
                 .parseString(warehouseFrom.getStringField(LocationFieldsMFR.ALGORITHM));
 
-        boolean enoughResources = true;
-
         StringBuilder errorMessage = new StringBuilder();
-
-        Multimap<Long, BigDecimal> quantitiesForWarehouse = getQuantitiesInWarehouse(warehouseFrom,
-                getProductsAndPositionsFromDocument(document));
+        Multimap<Entity, Entity> productsAndPositions = getProductsAndPositionsFromDocument(document);
+        boolean enoughResources = validateResourceStock(document, productsAndPositions);
+        if (!enoughResources) {
+            addResourceStockError(document);
+            return;
+        }
+        Multimap<Long, BigDecimal> quantitiesForWarehouse = getQuantitiesInWarehouse(warehouseFrom, productsAndPositions);
 
         for (Entity position : document.getHasManyField(DocumentFields.POSITIONS)) {
             Entity product = position.getBelongsToField(PositionFields.PRODUCT);
@@ -606,6 +613,10 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         } else {
             document.addGlobalError("materialFlow.error.position.quantity.notEnoughResourcesShort", false);
         }
+    }
+
+    private void addResourceStockError(final Entity document) {
+        document.addGlobalError("materialFlow.error.position.quantity.notEnoughAvailable", false);
     }
 
     private void moveResources(Entity warehouseFrom, Entity warehouseTo, Entity position, Object date,
@@ -869,6 +880,23 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         }
 
         return resources;
+    }
+
+    private boolean validateResourceStock(final Entity document, Multimap<Entity, Entity> productsAndPositions) {
+        Entity location = document.getBelongsToField(DocumentFields.LOCATION_FROM);
+        for (Entity product : productsAndPositions.keySet()) {
+            Optional<Entity> resourceStock = resourceStockService.getResourceStockForProductAndLocation(product, location);
+            if (resourceStock.isPresent()) {
+                BigDecimal availableQuantity = resourceStock.get().getDecimalField(ResourceStockFields.AVAILABLE_QUANTITY);
+                BigDecimal quantityFromPositions = productsAndPositions.get(product).stream()
+                        .map(position -> position.getDecimalField(PositionFields.QUANTITY))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                if (availableQuantity.compareTo(quantityFromPositions) < 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
 }
