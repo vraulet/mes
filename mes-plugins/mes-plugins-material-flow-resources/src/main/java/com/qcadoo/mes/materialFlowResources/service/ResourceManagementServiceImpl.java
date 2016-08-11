@@ -370,12 +370,11 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         Entity warehouse = document.getBelongsToField(DocumentFields.LOCATION_FROM);
         WarehouseAlgorithm warehouseAlgorithm;
 
-        StringBuilder errorMessage = new StringBuilder();
-
         Multimap<Entity, Entity> productsAndPositions = getProductsAndPositionsFromDocument(document);
-        boolean enoughResources = validateResourceStock(document, productsAndPositions);
+        StringBuilder errorMessage = validateResourceStock(document, productsAndPositions);
+        boolean enoughResources = errorMessage.length() == 0;
         if (!enoughResources) {
-            addResourceStockError(document);
+            addResourceStockError(document, warehouse, errorMessage);
             return;
         }
         Multimap<Long, BigDecimal> quantitiesForWarehouse = getQuantitiesInWarehouse(warehouse, productsAndPositions);
@@ -556,11 +555,11 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         WarehouseAlgorithm warehouseAlgorithm = WarehouseAlgorithm
                 .parseString(warehouseFrom.getStringField(LocationFieldsMFR.ALGORITHM));
 
-        StringBuilder errorMessage = new StringBuilder();
         Multimap<Entity, Entity> productsAndPositions = getProductsAndPositionsFromDocument(document);
-        boolean enoughResources = validateResourceStock(document, productsAndPositions);
+        StringBuilder errorMessage = validateResourceStock(document, productsAndPositions);
+        boolean enoughResources = errorMessage.length() == 0;
         if (!enoughResources) {
-            addResourceStockError(document);
+            addResourceStockError(document, warehouseFrom, errorMessage);
             return;
         }
         Multimap<Long, BigDecimal> quantitiesForWarehouse = getQuantitiesInWarehouse(warehouseFrom, productsAndPositions);
@@ -617,8 +616,14 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         }
     }
 
-    private void addResourceStockError(final Entity document) {
-        document.addGlobalError("materialFlow.error.position.quantity.notEnoughAvailable", false);
+    private void addResourceStockError(final Entity document, final Entity warehouseFrom, final StringBuilder errorMessage) {
+        String warehouseName = warehouseFrom.getStringField(LocationFields.NAME);
+        if ((errorMessage.toString().length() + warehouseName.length()) < 255) {
+            document.addGlobalError("materialFlow.error.position.quantity.notEnoughAvailable", false, errorMessage.toString(),
+                    warehouseName);
+        } else {
+            document.addGlobalError("materialFlow.error.position.quantity.notEnoughAvailableShort", false);
+        }
     }
 
     private void moveResources(Entity warehouseFrom, Entity warehouseTo, Entity position, Object date,
@@ -884,7 +889,8 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
         return resources;
     }
 
-    private boolean validateResourceStock(final Entity document, Multimap<Entity, Entity> productsAndPositions) {
+    private StringBuilder validateResourceStock(final Entity document, Multimap<Entity, Entity> productsAndPositions) {
+        StringBuilder errorMessage = new StringBuilder();
         Entity location = document.getBelongsToField(DocumentFields.LOCATION_FROM);
         for (Entity product : productsAndPositions.keySet()) {
             Optional<Entity> resourceStock = resourceStockService.getResourceStockForProductAndLocation(product, location);
@@ -898,11 +904,15 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 quantityFromPositions = quantityFromPositions.subtract(reservedQuantity);
                 if (availableQuantity.compareTo(quantityFromPositions) < 0) {
-                    return false;
+                    errorMessage.append(product.getStringField(ProductFields.NUMBER));
+                    errorMessage.append(" - ");
+                    errorMessage.append(numberService.format(quantityFromPositions.subtract(availableQuantity)));
+                    errorMessage.append(product.getStringField(ProductFields.UNIT));
+                    errorMessage.append(", ");
                 }
             }
         }
-        return true;
+        return errorMessage;
     }
 
     private BigDecimal getReservationQuantityForPosition(final Entity position) {
