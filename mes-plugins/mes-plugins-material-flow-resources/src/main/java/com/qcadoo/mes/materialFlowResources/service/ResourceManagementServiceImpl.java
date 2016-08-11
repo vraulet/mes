@@ -27,6 +27,7 @@ import static com.qcadoo.mes.materialFlow.constants.TransferFields.TIME;
 import static com.qcadoo.mes.materialFlowResources.constants.ResourceFields.QUANTITY;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +48,7 @@ import com.qcadoo.mes.materialFlowResources.constants.DocumentFields;
 import com.qcadoo.mes.materialFlowResources.constants.LocationFieldsMFR;
 import com.qcadoo.mes.materialFlowResources.constants.MaterialFlowResourcesConstants;
 import com.qcadoo.mes.materialFlowResources.constants.PositionFields;
+import com.qcadoo.mes.materialFlowResources.constants.ReservationFields;
 import com.qcadoo.mes.materialFlowResources.constants.ResourceFields;
 import com.qcadoo.mes.materialFlowResources.constants.ResourceStockFields;
 import com.qcadoo.mes.materialFlowResources.constants.WarehouseAlgorithm;
@@ -888,15 +890,28 @@ public class ResourceManagementServiceImpl implements ResourceManagementService 
             Optional<Entity> resourceStock = resourceStockService.getResourceStockForProductAndLocation(product, location);
             if (resourceStock.isPresent()) {
                 BigDecimal availableQuantity = resourceStock.get().getDecimalField(ResourceStockFields.AVAILABLE_QUANTITY);
-                BigDecimal quantityFromPositions = productsAndPositions.get(product).stream()
+                Collection<Entity> positions = productsAndPositions.get(product);
+                BigDecimal quantityFromPositions = positions.stream()
                         .map(position -> position.getDecimalField(PositionFields.QUANTITY))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal reservedQuantity = positions.stream().map(this::getReservationQuantityForPosition)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                quantityFromPositions = quantityFromPositions.subtract(reservedQuantity);
                 if (availableQuantity.compareTo(quantityFromPositions) < 0) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    private BigDecimal getReservationQuantityForPosition(final Entity position) {
+        List<Entity> reservations = position.getHasManyField(PositionFields.RESERVATIONS);
+        if (reservations == null || reservations.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return reservations.stream().map(reservation -> reservation.getDecimalField(ReservationFields.QUANTITY))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
 }
