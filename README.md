@@ -31,6 +31,6 @@ Commercial version provides i.e.
 
 The code is available under the [GNU AGPLv3](LICENSE.txt).
 
-VR
+VR2
 
 
